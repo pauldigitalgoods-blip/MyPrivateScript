@@ -1,11 +1,8 @@
--- ULTIMATE CRYSTAL HATCHER 2025 | RAYFIELD UI
+-- ULTIMATE CRYSTAL HATCHER 2025 | RAYFIELD UI | NO HWID | NO KEY
 -- Fully Auto Play → House → Starter Egg (6s wait) → Mass Hatch (5 retries) → Rollback BEFORE Cheese → Rejoin
 -- Dec 12, 2025 Compatible | Built with Rayfield UI
 
--- Load Rayfield UI
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
--- Main Script Services
+-- Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -13,17 +10,16 @@ local TeleportService = game:GetService("TeleportService")
 local StarterGui = game:GetService("StarterGui")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
+
 local player = Players.LocalPlayer
 local Fsys = require(ReplicatedStorage:WaitForChild("Fsys"))
 local ClientData = Fsys.load("ClientData")
 local EquipRemote = ReplicatedStorage.API["ToolAPI/Equip"]
-local BuyItem = ReplicatedStorage.API["ShopAPI/BuyItem"]
-local GiveItem = ReplicatedStorage.API["TradeAPI/GiveItem"]
 local API = ReplicatedStorage.API
 
-local request = syn and syn.request or fluxus and fluxus.request or request or http_request or http.request
+local request = syn and syn.request or fluxus and fluxus.request or http_request or http.request
 
--- Config (saved via Rayfield)
+-- Config
 local Config = {
     AutoPlayHouse = true,
     AntiAFK = true,
@@ -52,14 +48,24 @@ local function SaveConfig()
     pcall(function() writefile("UltimateHatcher/Config.json", HttpService:JSONEncode(Config)) end)
 end
 
--- Notification
+-- Notification helper
 local function Notify(title, text, duration)
     pcall(function()
         StarterGui:SetCore("SendNotification", {Title = title, Text = text, Duration = duration or 6})
     end)
 end
 
--- Create Rayfield Window
+-- Load Rayfield safely
+local Rayfield
+local success, err = pcall(function()
+    Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+end)
+if not success then
+    warn("Failed to load Rayfield:", err)
+    return
+end
+
+-- Create Window
 local Window = Rayfield:CreateWindow({
     Name = "Ultimate Crystal Hatcher 2025",
     LoadingTitle = "Loading Hatcher...",
@@ -67,158 +73,16 @@ local Window = Rayfield:CreateWindow({
     ConfigurationSaving = { Enabled = true, FolderName = "UltimateHatcher", FileName = "Config" },
 })
 
+-- Tabs
 local MainTab = Window:CreateTab("Main", 4483362458)
 local AutoTab = Window:CreateTab("Toggles", 4483362458)
 local LogTab = Window:CreateTab("Webhook & Pets", 4483362458)
 
 local StatusLabel = MainTab:CreateLabel("Status: Idle...")
 
--- Auto Tab Toggles
-AutoTab:CreateToggle({
-    Name = "Auto Play & House Entry",
-    CurrentValue = Config.AutoPlayHouse,
-    Flag = "AutoPlayHouse",
-    Callback = function(Value)
-        Config.AutoPlayHouse = Value
-        SaveConfig()
-        if Value then AutoPlayHouse() end
-    end,
-})
-
-AutoTab:CreateToggle({
-    Name = "Anti-AFK",
-    CurrentValue = Config.AntiAFK,
-    Flag = "AntiAFK",
-    Callback = function(Value)
-        Config.AntiAFK = Value
-        SaveConfig()
-        if Value then StartAntiAFK() end
-    end,
-})
-
-AutoTab:CreateToggle({
-    Name = "Auto Rejoin After Kick",
-    CurrentValue = Config.AutoRejoin,
-    Flag = "AutoRejoin",
-    Callback = function(Value)
-        Config.AutoRejoin = Value
-        SaveConfig()
-    end,
-})
-
-AutoTab:CreateSlider({
-    Name = "Rejoin Delay (sec)",
-    Range = {3, 30},
-    Increment = 1,
-    CurrentValue = Config.RejoinDelay,
-    Flag = "RejoinDelay",
-    Callback = function(Value)
-        Config.RejoinDelay = Value
-        SaveConfig()
-    end,
-})
-
-AutoTab:CreateToggle({
-    Name = "Auto Rollback on Bad Hatch",
-    CurrentValue = Config.AutoRollback,
-    Flag = "AutoRollback",
-    Callback = function(Value)
-        Config.AutoRollback = Value
-        SaveConfig()
-    end,
-})
-
-AutoTab:CreateToggle({
-    Name = "Auto Cheese After Rollback",
-    CurrentValue = Config.AutoCheese,
-    Flag = "AutoCheese",
-    Callback = function(Value)
-        Config.AutoCheese = Value
-        SaveConfig()
-    end,
-})
-
--- Log Tab
-LogTab:CreateInput({
-    Name = "Webhook URL",
-    PlaceholderText = "https://discord.com/api/webhooks/...",
-    RemoveTextAfterFocusLost = false,
-    CurrentValue = Config.Webhook,
-    Flag = "Webhook",
-    Callback = function(Text)
-        Config.Webhook = Text
-        SaveConfig()
-    end,
-})
-
-LogTab:CreateToggle({
-    Name = "Log Commons",
-    CurrentValue = Config.LogCommon,
-    Flag = "LogCommon",
-    Callback = function(Value)
-        Config.LogCommon = Value
-        SaveConfig()
-    end,
-})
-
-LogTab:CreateToggle({
-    Name = "Log Uncommons",
-    CurrentValue = Config.LogUncommon,
-    Flag = "LogUncommon",
-    Callback = function(Value)
-        Config.LogUncommon = Value
-        SaveConfig()
-    end,
-})
-
-LogTab:CreateToggle({
-    Name = "Log Rares",
-    CurrentValue = Config.LogRare,
-    Flag = "LogRare",
-    Callback = function(Value)
-        Config.LogRare = Value
-        SaveConfig()
-    end,
-})
-
-LogTab:CreateToggle({
-    Name = "Log Ultra Rares",
-    CurrentValue = Config.LogUltraRare,
-    Flag = "LogUltraRare",
-    Callback = function(Value)
-        Config.LogUltraRare = Value
-        SaveConfig()
-    end,
-})
-
-LogTab:CreateToggle({
-    Name = "Log Legendaries",
-    CurrentValue = Config.LogLegendary,
-    Flag = "LogLegendary",
-    Callback = function(Value)
-        Config.LogLegendary = Value
-        SaveConfig()
-    end,
-})
-
-LogTab:CreateInput({
-    Name = "Desired Pets (comma separated, keep these)",
-    PlaceholderText = "pet_recycler_2025_giant_panda, penguins_2025_dango_penguins",
-    RemoveTextAfterFocusLost = false,
-    CurrentValue = table.concat(Config.DesiredPets, ", "),
-    Flag = "DesiredPets",
-    Callback = function(Text)
-        Config.DesiredPets = {}
-        for pet in Text:gmatch("[^,]+") do
-            table.insert(Config.DesiredPets, pet:lower():gsub("%s+", ""))
-        end
-        SaveConfig()
-    end,
-})
-
 -- Anti-AFK
 local antiAFKConn
-function StartAntiAFK()
+local function StartAntiAFK()
     if antiAFKConn then antiAFKConn:Disconnect() end
     antiAFKConn = RunService.Heartbeat:Connect(function()
         local char = player.Character
@@ -229,25 +93,31 @@ function StartAntiAFK()
 end
 
 -- Auto Play & House
-function AutoPlayHouse()
+local function AutoPlayHouse()
     local playClicked = false
     local clickingEnabled = true
-    local playButton = nil
+    local playButton
+
     local function updateStep(msg)
-        print("[Auto] " .. msg)
         StatusLabel:Set(msg)
+        print("[Auto] "..msg)
     end
+
     updateStep("Waiting for load...")
     repeat task.wait(0.5) until player:GetAttribute("file_load_status") == "done"
     Notify("Loaded", "Starting Auto Play...", 5)
     task.wait(5)
-    updateStep("Looking for Play button...")
+
+    -- Find Play button
     task.spawn(function()
         while clickingEnabled do
-            task.wait(1.2)
+            task.wait(1)
             local success, btn = pcall(function()
-                return player.PlayerGui:FindFirstChild("NewsApp", true):FindFirstChild("EnclosingFrame", true)
-                        :FindFirstChild("MainFrame", true):FindFirstChild("Buttons", true):FindFirstChild("PlayButton")
+                return player.PlayerGui:FindFirstChild("NewsApp", true)
+                    :FindFirstChild("EnclosingFrame", true)
+                    :FindFirstChild("MainFrame", true)
+                    :FindFirstChild("Buttons", true)
+                    :FindFirstChild("PlayButton")
             end)
             if success and btn and btn:IsA("GuiButton") and btn.Visible then
                 playButton = btn
@@ -256,6 +126,8 @@ function AutoPlayHouse()
             end
         end
     end)
+
+    -- Click Play button
     task.spawn(function()
         while clickingEnabled do
             task.wait(4 + math.random(0, 2))
@@ -263,12 +135,14 @@ function AutoPlayHouse()
             pcall(function()
                 firesignal(playButton.MouseButton1Down)
                 firesignal(playButton.Activated)
-                task.wait(1.0)
+                task.wait(1)
                 firesignal(playButton.MouseButton1Up)
                 firesignal(playButton.MouseButton1Click)
             end)
         end
     end)
+
+    -- Enter house
     task.spawn(function()
         updateStep("Waiting for entry...")
         while not playClicked do
@@ -319,7 +193,7 @@ function AutoPlayHouse()
 end
 
 -- Hatching
-function StartHatching()
+local function StartHatching()
     StatusLabel:Set("Waiting for Starter Egg...")
     Notify("Ready", "Equip Starter Egg to begin", 8)
     while not Workspace.Pets:FindFirstChild("Starter Egg") do
@@ -327,9 +201,11 @@ function StartHatching()
     end
     Notify("STARTER EGG DETECTED", "Starting mass Crystal Egg hatch...", 6)
     task.wait(6)
+
     local hatchedPets = {}
     local hatchStartTime = tick()
     local attempts = 0
+
     while attempts < 5 do
         local inv = ClientData.get("inventory").pets or {}
         local crystalEggs = {}
@@ -389,9 +265,13 @@ if Config.AutoRejoin then
     end)
 end
 
--- Auto Start if enabled
-if Config.AutoPlayHouse then AutoPlayHouse() end
-if Config.AntiAFK then StartAntiAFK() end
+-- Auto start
+if Config.AutoPlayHouse then
+    AutoPlayHouse()
+end
+if Config.AntiAFK then
+    StartAntiAFK()
+end
 
 Notify("Hatcher Loaded", "Configure in UI and toggle Auto Play!", 10)
 StatusLabel:Set("Ready - Toggle Auto Play & House")
