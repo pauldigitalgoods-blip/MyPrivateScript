@@ -1,33 +1,6 @@
--- ULTIMATE CRYSTAL HATCHER 2025 | RAYFIELD UI | KEY SYSTEM + HWID LOCK
+-- ULTIMATE CRYSTAL HATCHER 2025 | RAYFIELD UI
 -- Fully Auto Play → House → Starter Egg (6s wait) → Mass Hatch (5 retries) → Rollback BEFORE Cheese → Rejoin
--- Dec 12, 2025 Compatible | Built with Rayfield UI | HWID Locked + Key Gated
-
--- HWID LOCK (assumes Synapse/Fluxus - change executor if needed)
-local HWID = ""
-local executor = identifyexecutor and identifyexecutor() or "Unknown"
-if executor == "Synapse" then
-    HWID = syn.gethwid()
-elseif executor == "Fluxus" then
-    HWID = fluxus.gethwid()
-else
-    -- Fallback for other exploits (less secure)
-    HWID = game:GetService("RbxAnalyticsService"):GetClientId() .. tostring(game:GetService("Players").LocalPlayer.UserId)
-end
-
--- Allowed HWIDs (add yours here - get via print(HWID) on first run)
-local AllowedHWIDs = {"YOUR_HWID_HERE"} -- Replace with your actual HWID
-if not table.find(AllowedHWIDs, HWID) then
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "HWID Locked",
-        Text = "Unauthorized HWID detected. Script blocked.",
-        Duration = 10
-    })
-    return -- Exit script
-end
-
--- KEY SYSTEM (built into Rayfield - users enter key, verified via webhook)
-local KeyWebhook = "YOUR_DISCORD_WEBHOOK_URL_HERE" -- Replace with your Discord webhook for key verification
--- To set up: Create Discord webhook, send POST with {"key": user_key} and check if valid on your server/bot
+-- Dec 12, 2025 Compatible | Built with Rayfield UI
 
 -- Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -86,45 +59,13 @@ local function Notify(title, text, duration)
     end)
 end
 
--- Create Rayfield Window with Key System
+-- Create Rayfield Window
 local Window = Rayfield:CreateWindow({
     Name = "Ultimate Crystal Hatcher 2025",
     LoadingTitle = "Loading Hatcher...",
     LoadingSubtitle = "by Grok - Dec 2025",
     ConfigurationSaving = { Enabled = true, FolderName = "UltimateHatcher", FileName = "Config" },
-    KeySystem = true, -- Enable key gate
-    KeySettings = {
-        Title = "Key Required",
-        Subtitle = "Enter your key to access",
-        Note = "Get key from DMs or Discord",
-        FileName = "HatcherKey",
-        SaveKey = true,
-        GrabKeyFromSite = false, -- Set true if using pastebin URL
-        Key = {"DEMOKEY123"} -- Replace with real keys or webhook logic below
-    }
 })
-
--- Key Verification Callback (custom - webhook based)
--- Rayfield calls this on key enter - verify via webhook
-local function VerifyKey(key)
-    if KeyWebhook == "" then return true end -- Skip if no webhook
-    local success, response = pcall(function()
-        return request({
-            Url = KeyWebhook,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode({key = key, hwid = HWID, user = player.Name})
-        })
-    end)
-    if success and response.StatusCode == 200 then
-        local data = HttpService:JSONDecode(response.Body)
-        return data.valid == true -- Assume your bot returns {valid = true/false}
-    end
-    return false
-end
-
--- Override Rayfield's key check if needed (advanced - add to KeySettings if using custom)
--- For now, use Rayfield's built-in with Key list. For webhook, users enter key, script verifies on load.
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 local AutoTab = Window:CreateTab("Toggles", 4483362458)
@@ -140,9 +81,7 @@ AutoTab:CreateToggle({
     Callback = function(Value)
         Config.AutoPlayHouse = Value
         SaveConfig()
-        if Value then
-            AutoPlayHouse()
-        end
+        if Value then AutoPlayHouse() end
     end,
 })
 
@@ -153,9 +92,7 @@ AutoTab:CreateToggle({
     Callback = function(Value)
         Config.AntiAFK = Value
         SaveConfig()
-        if Value then
-            StartAntiAFK()
-        end
+        if Value then StartAntiAFK() end
     end,
 })
 
@@ -281,7 +218,7 @@ LogTab:CreateInput({
 
 -- Anti-AFK
 local antiAFKConn
-local function StartAntiAFK()
+function StartAntiAFK()
     if antiAFKConn then antiAFKConn:Disconnect() end
     antiAFKConn = RunService.Heartbeat:Connect(function()
         local char = player.Character
@@ -291,8 +228,8 @@ local function StartAntiAFK()
     end)
 end
 
--- Auto Play & House (your clean script, no reset stuck)
-local function AutoPlayHouse()
+-- Auto Play & House
+function AutoPlayHouse()
     local playClicked = false
     local clickingEnabled = true
     local playButton = nil
@@ -309,7 +246,8 @@ local function AutoPlayHouse()
         while clickingEnabled do
             task.wait(1.2)
             local success, btn = pcall(function()
-                return player.PlayerGui:FindFirstChild("NewsApp", true):FindFirstChild("EnclosingFrame", true):FindFirstChild("MainFrame", true):FindFirstChild("Buttons", true):FindFirstChild("PlayButton")
+                return player.PlayerGui:FindFirstChild("NewsApp", true):FindFirstChild("EnclosingFrame", true)
+                        :FindFirstChild("MainFrame", true):FindFirstChild("Buttons", true):FindFirstChild("PlayButton")
             end)
             if success and btn and btn:IsA("GuiButton") and btn.Visible then
                 playButton = btn
@@ -380,18 +318,17 @@ local function AutoPlayHouse()
     end)
 end
 
--- Hatching (roll.txt logic + improvements)
-local function StartHatching()
+-- Hatching
+function StartHatching()
     StatusLabel:Set("Waiting for Starter Egg...")
     Notify("Ready", "Equip Starter Egg to begin", 8)
     while not Workspace.Pets:FindFirstChild("Starter Egg") do
         task.wait(1)
     end
     Notify("STARTER EGG DETECTED", "Starting mass Crystal Egg hatch...", 6)
-    task.wait(6) -- 6s wait as requested
-    hatchedPets = {}
+    task.wait(6)
+    local hatchedPets = {}
     local hatchStartTime = tick()
-
     local attempts = 0
     while attempts < 5 do
         local inv = ClientData.get("inventory").pets or {}
@@ -419,8 +356,6 @@ local function StartHatching()
         TeleportService:Teleport(game.PlaceId)
         return
     end
-
-    task.wait(6)
 
     local hasGood = false
     for _, name in ipairs(hatchedPets) do
@@ -455,12 +390,8 @@ if Config.AutoRejoin then
 end
 
 -- Auto Start if enabled
-if Config.AutoPlayHouse then
-    AutoPlayHouse()
-end
-if Config.AntiAFK then
-    StartAntiAFK()
-end
+if Config.AutoPlayHouse then AutoPlayHouse() end
+if Config.AntiAFK then StartAntiAFK() end
 
 Notify("Hatcher Loaded", "Configure in UI and toggle Auto Play!", 10)
 StatusLabel:Set("Ready - Toggle Auto Play & House")
